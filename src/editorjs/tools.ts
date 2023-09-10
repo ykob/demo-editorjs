@@ -1,4 +1,3 @@
-import ImageTool from "@editorjs/image";
 import { ToolConstructable, ToolSettings } from "@editorjs/editorjs";
 
 type Tools = {
