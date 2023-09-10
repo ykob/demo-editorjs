@@ -23,6 +23,7 @@ const editor = new EditorJS({
       },
       blockTunes: {
         delete: {
+          "Click to delete": "クリックして削除",
           Delete: "削除",
         },
         moveUp: {
