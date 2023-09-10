@@ -1,125 +1,45 @@
 import "./index.css";
 import { IconPicture } from "@codexteam/icons";
+import { make } from "../../utils";
 
-/**
- * SimpleImage Tool for the Editor.js
- * Works only with pasted image URLs and requires no server-side uploader.
- *
- * @typedef {object} SimpleImageData
- * @description Tool's input and output data format
- * @property {string} url — image URL
- * @property {string} caption — image caption
- * @property {boolean} withBorder - should image be rendered with border
- * @property {boolean} withBackground - should image be rendered with background
- * @property {boolean} stretched - should image be stretched to full width of container
- */
 export default class SimpleImage {
-  /**
-   * Render plugin`s main Element and fill it with saved data
-   *
-   * @param {{data: SimpleImageData, config: object, api: object}}
-   *   data — previously saved data
-   *   config - user config for Tool
-   *   api - Editor.js API
-   *   readOnly - read-only mode flag
-   */
   constructor({ data, config, api, readOnly }) {
-    /**
-     * Editor.js API
-     */
     this.api = api;
     this.readOnly = readOnly;
-
-    /**
-     * When block is only constructing,
-     * current block points to previous block.
-     * So real block index will be +1 after rendering
-     *
-     * @todo place it at the `rendered` event hook to get real block index without +1;
-     * @type {number}
-     */
     this.blockIndex = this.api.blocks.getCurrentBlockIndex() + 1;
-
-    /**
-     * Styles
-     */
     this.CSS = {
       baseClass: this.api.styles.block,
       loading: this.api.styles.loader,
       input: this.api.styles.input,
-
-      /**
-       * Tool's classes
-       */
       wrapper: "cdx-simple-image",
       imageHolder: "cdx-simple-image__picture",
-      caption: "cdx-simple-image__caption",
     };
-
-    /**
-     * Nodes cache
-     */
     this.nodes = {
       wrapper: null,
       imageHolder: null,
       image: null,
       caption: null,
     };
-
-    /**
-     * Tool's initial data
-     */
     this.data = {
       url: data.url || "",
       caption: data.caption || "",
     };
-
-    /**
-     * Available Image tunes
-     */
-    // this.tunes = [
-    //   {
-    //     name: "withBorder",
-    //     label: "Add Border",
-    //     icon: IconAddBorder,
-    //   },
-    //   {
-    //     name: "stretched",
-    //     label: "Stretch Image",
-    //     icon: IconStretch,
-    //   },
-    //   {
-    //     name: "withBackground",
-    //     label: "Add Background",
-    //     icon: IconAddBackground,
-    //   },
-    // ];
-    this.tunes = [];
   }
-
   static get toolbox() {
     return {
       icon: IconPicture,
       title: "画像",
     };
   }
-
-  /**
-   * Creates a Block:
-   *  1) Show preloader
-   *  2) Start to load an image
-   *  3) After loading, append image and caption input
-   *
-   * @public
-   */
   render() {
-    const wrapper = this._make("div", [this.CSS.baseClass, this.CSS.wrapper]),
-      loader = this._make("div", this.CSS.loading),
-      loadButton = this._make("input", [], {
+    const wrapper = make("div", [this.CSS.baseClass, this.CSS.wrapper]),
+      loader = make("div", this.CSS.loading),
+      loadButton = make("input", [], {
         type: "file",
+        accept: "image/*",
       }),
-      imageHolder = this._make("div", this.CSS.imageHolder),
-      image = this._make("img");
+      imageHolder = make("div", this.CSS.imageHolder),
+      image = make("img");
 
     wrapper.appendChild(loadButton);
 
@@ -137,6 +57,7 @@ export default class SimpleImage {
 
         loadButton.remove();
       };
+      loadButton.click();
     }
 
     image.onload = () => {
@@ -147,8 +68,7 @@ export default class SimpleImage {
     };
 
     image.onerror = (e) => {
-      // @todo use api.Notifies.show() to show error notification
-      console.log("Failed to load an image", e);
+      api.Notifies.show("Failed to load an image");
     };
 
     this.nodes.imageHolder = imageHolder;
@@ -157,12 +77,6 @@ export default class SimpleImage {
 
     return wrapper;
   }
-
-  /**
-   * @public
-   * @param {Element} blockContent - Tool's wrapper
-   * @returns {SimpleImageData}
-   */
   save(blockContent) {
     const image = blockContent.querySelector("img"),
       caption = blockContent.querySelector("." + this.CSS.input);
@@ -176,10 +90,6 @@ export default class SimpleImage {
       caption: caption.innerHTML,
     });
   }
-
-  /**
-   * Sanitizer rules
-   */
   static get sanitize() {
     return {
       url: {},
@@ -191,23 +101,9 @@ export default class SimpleImage {
       },
     };
   }
-
-  /**
-   * Notify core that read-only mode is suppoorted
-   *
-   * @returns {boolean}
-   */
   static get isReadOnlySupported() {
     return true;
   }
-
-  /**
-   * Read pasted image and convert it to base64
-   *
-   * @static
-   * @param {File} file
-   * @returns {Promise<SimpleImageData>}
-   */
   onDropHandler(file) {
     const reader = new FileReader();
 
@@ -222,12 +118,6 @@ export default class SimpleImage {
       };
     });
   }
-
-  /**
-   * On paste callback that is fired from Editor.
-   *
-   * @param {PasteEvent} event - event with pasted config
-   */
   onPaste(event) {
     switch (event.type) {
       case "tag": {
@@ -238,7 +128,6 @@ export default class SimpleImage {
         };
         break;
       }
-
       case "pattern": {
         const { data: text } = event.detail;
 
@@ -247,33 +136,19 @@ export default class SimpleImage {
         };
         break;
       }
-
       case "file": {
         const { file } = event.detail;
 
         this.onDropHandler(file).then((data) => {
           this.data = data;
         });
-
         break;
       }
     }
   }
-
-  /**
-   * Returns image data
-   *
-   * @returns {SimpleImageData}
-   */
   get data() {
     return this._data;
   }
-
-  /**
-   * Set image data and update the view
-   *
-   * @param {SimpleImageData} data
-   */
   set data(data) {
     this._data = Object.assign({}, this.data, data);
 
@@ -285,13 +160,6 @@ export default class SimpleImage {
       this.nodes.caption.innerHTML = this.data.caption;
     }
   }
-
-  /**
-   * Specify paste substitutes
-   *
-   * @see {@link ../../../docs/tools.md#paste-handling}
-   * @public
-   */
   static get pasteConfig() {
     return {
       patterns: {
@@ -306,29 +174,5 @@ export default class SimpleImage {
         mimeTypes: ["image/*"],
       },
     };
-  }
-
-  /**
-   * Helper for making Elements with attributes
-   *
-   * @param  {string} tagName           - new Element tag name
-   * @param  {Array|string} classNames  - list or name of CSS classname(s)
-   * @param  {object} attributes        - any attributes
-   * @returns {Element}
-   */
-  _make(tagName, classNames = null, attributes = {}) {
-    const el = document.createElement(tagName);
-
-    if (Array.isArray(classNames)) {
-      el.classList.add(...classNames);
-    } else if (classNames) {
-      el.classList.add(classNames);
-    }
-
-    for (const attrName in attributes) {
-      el[attrName] = attributes[attrName];
-    }
-
-    return el;
   }
 }
