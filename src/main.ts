@@ -44,3 +44,10 @@ const editor = new EditorJS({
     },
   },
 });
+
+const buttonPost = document.getElementById("button-post");
+
+buttonPost!.addEventListener("click", async () => {
+  const output = await editor.save();
+  console.log(output);
+});
