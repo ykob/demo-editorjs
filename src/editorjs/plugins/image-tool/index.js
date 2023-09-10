@@ -113,13 +113,7 @@ export default class SimpleImage {
     const wrapper = this._make("div", [this.CSS.baseClass, this.CSS.wrapper]),
       loader = this._make("div", this.CSS.loading),
       imageHolder = this._make("div", this.CSS.imageHolder),
-      image = this._make("img"),
-      caption = this._make("div", [this.CSS.input, this.CSS.caption], {
-        contentEditable: !this.readOnly,
-        innerHTML: this.data.caption || "",
-      });
-
-    caption.dataset.placeholder = "Enter a caption";
+      image = this._make("img");
 
     wrapper.appendChild(loader);
 
@@ -131,7 +125,6 @@ export default class SimpleImage {
       wrapper.classList.remove(this.CSS.loading);
       imageHolder.appendChild(image);
       wrapper.appendChild(imageHolder);
-      wrapper.appendChild(caption);
       loader.remove();
       this._acceptTuneView();
     };
@@ -144,7 +137,6 @@ export default class SimpleImage {
     this.nodes.imageHolder = imageHolder;
     this.nodes.wrapper = wrapper;
     this.nodes.image = image;
-    this.nodes.caption = caption;
 
     return wrapper;
   }
