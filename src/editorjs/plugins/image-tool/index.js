@@ -1,9 +1,5 @@
 import "./index.css";
-import {
-  IconAddBorder,
-  IconStretch,
-  IconAddBackground,
-} from "@codexteam/icons";
+import { IconPicture } from "@codexteam/icons";
 
 /**
  * SimpleImage Tool for the Editor.js
@@ -101,6 +97,13 @@ export default class SimpleImage {
     this.tunes = [];
   }
 
+  static get toolbox() {
+    return {
+      icon: IconPicture,
+      title: "画像",
+    };
+  }
+
   /**
    * Creates a Block:
    *  1) Show preloader
@@ -112,13 +115,28 @@ export default class SimpleImage {
   render() {
     const wrapper = this._make("div", [this.CSS.baseClass, this.CSS.wrapper]),
       loader = this._make("div", this.CSS.loading),
+      loadButton = this._make("input", [], {
+        type: "file",
+      }),
       imageHolder = this._make("div", this.CSS.imageHolder),
       image = this._make("img");
 
-    wrapper.appendChild(loader);
+    wrapper.appendChild(loadButton);
 
     if (this.data.url) {
       image.src = this.data.url;
+    } else {
+      loadButton.onchange = (e) => {
+        const file = e.target.files[0];
+        const url = URL.createObjectURL(file);
+
+        this.data = {
+          url: url,
+          caption: file.name,
+        };
+
+        loadButton.remove();
+      };
     }
 
     image.onload = () => {
@@ -126,7 +144,6 @@ export default class SimpleImage {
       imageHolder.appendChild(image);
       wrapper.appendChild(imageHolder);
       loader.remove();
-      this._acceptTuneView();
     };
 
     image.onerror = (e) => {
@@ -292,21 +309,6 @@ export default class SimpleImage {
   }
 
   /**
-   * Returns image tunes config
-   *
-   * @returns {Array}
-   */
-  renderSettings() {
-    return this.tunes.map((tune) => ({
-      ...tune,
-      label: this.api.i18n.t(tune.label),
-      toggle: true,
-      onActivate: () => this._toggleTune(tune.name),
-      isActive: !!this.data[tune.name],
-    }));
-  }
-
-  /**
    * Helper for making Elements with attributes
    *
    * @param  {string} tagName           - new Element tag name
@@ -328,36 +330,5 @@ export default class SimpleImage {
     }
 
     return el;
-  }
-
-  /**
-   * Click on the Settings Button
-   *
-   * @private
-   * @param tune
-   */
-  _toggleTune(tune) {
-    this.data[tune] = !this.data[tune];
-    this._acceptTuneView();
-  }
-
-  /**
-   * Add specified class corresponds with activated tunes
-   *
-   * @private
-   */
-  _acceptTuneView() {
-    this.tunes.forEach((tune) => {
-      this.nodes.imageHolder.classList.toggle(
-        this.CSS.imageHolder +
-          "--" +
-          tune.name.replace(/([A-Z])/g, (g) => `-${g[0].toLowerCase()}`),
-        !!this.data[tune.name]
-      );
-
-      if (tune.name === "stretched") {
-        this.api.blocks.stretchBlock(this.blockIndex, !!this.data.stretched);
-      }
-    });
   }
 }
