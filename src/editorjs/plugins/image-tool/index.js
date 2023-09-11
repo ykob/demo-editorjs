@@ -18,17 +18,86 @@ export default class SimpleImage {
       wrapper: null,
       imageHolder: null,
       image: null,
-      caption: null,
+      loadButton: null,
     };
     this.data = {
       url: data.url || "",
       caption: data.caption || "",
     };
+    this.isDropped = false;
   }
-  static get toolbox() {
+  get data() {
+    return this._data;
+  }
+  set data(data) {
+    this._data = Object.assign({}, this.data, data);
+
+    if (this.nodes.image) {
+      this.nodes.image.src = this.data.url;
+    }
+
+    if (this.nodes.caption) {
+      this.nodes.caption.innerHTML = this.data.caption;
+    }
+  }
+  static get isReadOnlySupported() {
+    return true;
+  }
+  onDropHandler(file) {
+    const reader = new FileReader();
+
+    reader.readAsDataURL(file);
+    return new Promise((resolve) => {
+      reader.onload = (event) => {
+        resolve({
+          url: event.target.result,
+          caption: file.name,
+        });
+      };
+    });
+  }
+  onPaste(event) {
+    this.isDropped = true;
+    switch (event.type) {
+      case "tag": {
+        const img = event.detail.data;
+
+        this.data = {
+          url: img.src,
+        };
+        break;
+      }
+      case "pattern": {
+        const { data: text } = event.detail;
+
+        this.data = {
+          url: text,
+        };
+        break;
+      }
+      case "file": {
+        const { file } = event.detail;
+
+        this.onDropHandler(file).then((data) => {
+          this.data = data;
+        });
+        break;
+      }
+    }
+  }
+  static get pasteConfig() {
     return {
-      icon: IconPicture,
-      title: "画像",
+      patterns: {
+        image: /https?:\/\/\S+\.(gif|jpe?g|tiff|png|webp)$/i,
+      },
+      tags: [
+        {
+          img: { src: true },
+        },
+      ],
+      files: {
+        mimeTypes: ["image/*"],
+      },
     };
   }
   render() {
@@ -41,11 +110,10 @@ export default class SimpleImage {
       imageHolder = make("div", this.CSS.imageHolder),
       image = make("img");
 
-    wrapper.appendChild(loadButton);
-
     if (this.data.url) {
       image.src = this.data.url;
     } else {
+      wrapper.appendChild(loadButton);
       loadButton.onchange = (e) => {
         const file = e.target.files[0];
         const url = URL.createObjectURL(file);
@@ -57,7 +125,6 @@ export default class SimpleImage {
 
         loadButton.remove();
       };
-      loadButton.click();
     }
 
     image.onload = () => {
@@ -65,6 +132,7 @@ export default class SimpleImage {
       imageHolder.appendChild(image);
       wrapper.appendChild(imageHolder);
       loader.remove();
+      loadButton.remove();
     };
 
     image.onerror = (e) => {
@@ -93,86 +161,15 @@ export default class SimpleImage {
   static get sanitize() {
     return {
       url: {},
-      withBorder: {},
-      withBackground: {},
-      stretched: {},
       caption: {
         br: true,
       },
     };
   }
-  static get isReadOnlySupported() {
-    return true;
-  }
-  onDropHandler(file) {
-    const reader = new FileReader();
-
-    reader.readAsDataURL(file);
-
-    return new Promise((resolve) => {
-      reader.onload = (event) => {
-        resolve({
-          url: event.target.result,
-          caption: file.name,
-        });
-      };
-    });
-  }
-  onPaste(event) {
-    switch (event.type) {
-      case "tag": {
-        const img = event.detail.data;
-
-        this.data = {
-          url: img.src,
-        };
-        break;
-      }
-      case "pattern": {
-        const { data: text } = event.detail;
-
-        this.data = {
-          url: text,
-        };
-        break;
-      }
-      case "file": {
-        const { file } = event.detail;
-
-        this.onDropHandler(file).then((data) => {
-          this.data = data;
-        });
-        break;
-      }
-    }
-  }
-  get data() {
-    return this._data;
-  }
-  set data(data) {
-    this._data = Object.assign({}, this.data, data);
-
-    if (this.nodes.image) {
-      this.nodes.image.src = this.data.url;
-    }
-
-    if (this.nodes.caption) {
-      this.nodes.caption.innerHTML = this.data.caption;
-    }
-  }
-  static get pasteConfig() {
+  static get toolbox() {
     return {
-      patterns: {
-        image: /https?:\/\/\S+\.(gif|jpe?g|tiff|png|webp)$/i,
-      },
-      tags: [
-        {
-          img: { src: true },
-        },
-      ],
-      files: {
-        mimeTypes: ["image/*"],
-      },
+      icon: IconPicture,
+      title: "画像",
     };
   }
 }
