@@ -116,14 +116,11 @@ export default class SimpleImage {
       wrapper.appendChild(loadButton);
       loadButton.onchange = (e) => {
         const file = e.target.files[0];
-        const url = URL.createObjectURL(file);
 
-        this.data = {
-          url: url,
-          caption: file.name,
-        };
-
-        loadButton.remove();
+        this.onDropHandler(file).then((data) => {
+          this.data = data;
+          loadButton.remove();
+        });
       };
     }
 
